@@ -40,3 +40,4 @@ This project is a lightweight credit-card transaction platform in TypeScript + E
 - Currency exchange
 - Interest calculation
 - Paying a balance
+- Transaction categorization for points
