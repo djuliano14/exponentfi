@@ -1,0 +1,42 @@
+Credit Card Transaction Platform (TypeScript + Express)
+
+This project is a lightweight credit-card transaction platform in TypeScript + Express: the server (src/server.ts) exposes /webhooks/transactions to run approval logic (src/services/approvalLogic.ts) and orchestration/persistence (src/services/webhookHandler.ts), stores data via an in-memory DB layer (src/db/index.ts), and supports monthly statement generation (src/services/statementGenerator.ts); shared types live in src/types, helpers in src/utils.
+
+## Flow (high level)
+- Payment network POSTs to /webhooks/transactions with a transaction payload.
+- server routes to handleTransactionWebhook → processTransaction (approval logic).
+- If new + approved: record transaction, update account balance, respond { approved: true }.
+- If new + denied: record transaction with denialReason, respond { approved: false }.
+- Monthly (or via /admin/generate-statements): generateMonthlyStatements builds statements from the transaction ledger.
+
+## Files and roles
+- server entry: src/server.ts — wires routes (/webhooks/transactions, /admin/generate-statements, /health), request validation, JSON parsing.
+
+- types: src/types/index.ts — shared types for Account, Card, Transaction, Statement, payloads, approval results.
+
+- approval logic: src/services/approvalLogic.ts — core approve/deny checks (idempotency, card/account existence + status, credit limit, per-card limit).
+    - also where later we could add things like country rules, endpoint spamming
+
+- webhook handler: src/services/webhookHandler.ts — orchestrates a webhook call: runs approval logic, persists transaction, updates balance, returns response.
+
+- statements: src/services/statementGenerator.ts — monthly statement creation (opening balance, total spent, closing balance, minimum payment, due date).
+
+- data layer: src/db/index.ts — in-memory stores and basic CRUD/find helpers for accounts, cards, transactions, statements (swap with real DB later).
+
+- utils: src/utils/helpers.ts — id generation, date helpers, cents formatting, payload validation.
+
+## Endpoints
+- POST /webhooks/transactions — main webhook, returns { approved: boolean }.
+- POST /admin/generate-statements — triggers statement generation for active accounts (demo convenience).
+- GET /health — basic health check.
+
+## Run locally
+- Install: npm install
+- Dev: npm run dev (ts-node src/server.ts)
+- Build: npm run build; Start: npm start
+
+## Some eventual improvements
+- Country based transaction rules
+- Currency exchange
+- Interest calculation
+- Paying a balance
